@@ -1,47 +1,246 @@
 ---
 title: "Ejercicio regresión 1"
-author: "Julio Sorroche"
+author: "Julio Sorroche García"
 date: "10 de enero de 2018"
 output: html_document
 ---
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(xtable)
 ```
-```{r plots}
-## R Markdown
+  
+#### La siguiente tabla muestra la equivalencia entre dos escalas de medición de la sensibilidad de una película:
+
+```{r presentacion, echo=FALSE}
 DIN <- c(12,15,18,21,24,27,30,33,36)
 ASA <- c(12.5,25,50,100,200,400,800,1600,3200)
 
 movieFrame = data.frame(DIN,ASA)
-
-rm(DIN,ASA)
-
 colnames(movieFrame) <- c("DIN","ASA")
-g_range <- range(0, movieFrame[,"DIN"], movieFrame[,"ASA"])
+movieFramet <- data.frame(t(movieFrame))
+rm(DIN,ASA)
+```
+<br/>
+```{r showtabla, echo = FALSE, results="asis"}
+centro <-rep('c',ncol(movieFramet)+1)
+tabla <- xtable(movieFramet, caption = "Datos disponibles sobre película",auto=TRUE,align=centro)
+print(tabla, type = "html",include.colnames=FALSE,width=400)
+```
 
-plot(movieFrame[,"DIN"],movieFrame[,"ASA"],type="o", col="blue",ann=FALSE,axes=FALSE,ylim=g_range)
-title(main="Sensibilidad", col.main="green", font.main=2)
+##### a)  Dibujar la nube de puntos
+
+```{r plots, fig.align='center', echo=FALSE}
+y_range <- range(0, movieFrame[,"ASA"])
+x_range <- range(0, movieFrame[,"DIN"])
+
+plot(movieFrame[,"DIN"],movieFrame[,"ASA"],type="o", col="blue",ann=FALSE,axes=FALSE,ylim=y_range,xlim=x_range)
+title(main="Sensibilidad", col.main="dark green", font.main=2)
 title(xlab="DIN", col.lab=rgb(0,0.6,0))
 title(ylab="ASA", col.lab=rgb(0,0.6,0))
-axis(2, las=1, at=300*0:g_range[2])
-
-
-```
-You,can embed an R code chunk like this:
-```
-```{r cars}
-summary(cars)
+axis(2, las=1, at=300*0:y_range[2])
+axis(1, las=1, at=3*0:x_range[2])
+box()
 ```
 
-## Including Plots
+#####  b) Ajustar un modelo lineal $f1(x)$ que permita aproximar la sensibilidad de una película. Evaluar $f1(25)$ ¿Qué coeficientes de $f1(x)$ son necesarios para un buen ajuste? ¿Es buen modelo? Dibujar la función obtenida junta a la nube de puntos.
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r, echo=FALSE}
+DINpre = movieFrame$DIN;
+f1x <- lm(movieFrame$ASA  ~ DINpre, data=movieFrame )
+f1x_prediction <- predict(f1x,data.frame(DINpre = 25))
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+<p style='font-size:15px'>**Ajuste del modelo lineal:**</p>
+
+```{r f1x}
+summary(f1x)
+```
+
+<p style='font-size:15px'>Este evalua a `r round(f1x_prediction,2)`.[^1]**</p> 
+<p style='font-size:15px'> Por tanto el coeficiente necesario es **`r ceiling(summary(f1x)$coefficients[2])`**, siendo el modelo: $`r ceiling(summary(f1x)$coefficients[1])` +`r ceiling(summary(f1x)$coefficients[2])`x$**</p>
+
+<p style='font-size:15px'>**Gráfica con la función obtenida del modelo lineal:**</p>
+
+```{r f1xplot, echo=FALSE,fig.align='center'}
+f1xall <- predict(f1x,data=movieFrame$DIN)
+f1xallPlot <- data.frame(predicted=unname(f1xall),DIN = movieFrame$DIN)
+
+y_range <- range(f1xallPlot[,"predicted"], movieFrame[,"ASA"])
+x_range <- range(0, f1xallPlot[,"DIN"])
+
+plot(movieFrame[,"DIN"],movieFrame[,"ASA"],type="o", col="blue",ann=FALSE,axes=FALSE,ylim=y_range,xlim=x_range)
+title(main="Predicción f1(DIN)", col.main="dark green", font.main=2)
+title(xlab="DIN", col.lab=rgb(0,0.6,0))
+title(ylab="ASA", col.lab=rgb(0,0.6,0))
+axis(2, las=1, at=300*ceiling(y_range[1]):y_range[2])
+axis(1, las=1, at=3*0:x_range[2])
+box()
+
+lines(f1xallPlot$DIN,f1xallPlot$predicted, type="o", pch=6, lty=2, col="red")
+legend(1, y_range[2], c("Nube de puntos","f1(x)"), cex=1, col=c("blue","red"), pch=c(1,6), lty=1:2)
+```
+</br>
+```{r deletethis1, echo=FALSE}
+rm(x_range,y_range,movieFramet,f1x_prediction,f1xall,f1xallPlot,tabla)
+```
+##### c) Ajustar un modelo de segundo grado $f2(x)$ que permita aproximar la sensibilidad de una película. Evaluar $f2(25)$ ¿Qué coeficientes de $f2(x)$ son necesarios para un buen ajuste? ¿Es buen modelo? Dibujar la función obtenida junta a la nube de puntos.
+
+```{r f2x, echo=FALSE}
+f2x <- lm(movieFrame$ASA  ~ poly(DINpre,degree=2), data=movieFrame )
+f2x_prediction <- predict(f2x,data.frame(DINpre = 25))
+```
 
 
+<p style='font-size:15px'>**Ajuste del modelo de segundo grado:**</p>
+
+```{r f2xsum}
+summary(f2x)
+```
+
+
+<p style='font-size:15px'>Este evalua a **`r round(f2x_prediction,2)`.**</p>
+<p style='font-size:15px'> Por tanto los coeficientes necesarios son **`r ceiling(summary(f2x)$coefficients[2])`** en primer grado y **`r ceiling(summary(f2x)$coefficients[3])`** en segundo, siendo el modelo: **$`r ceiling(summary(f2x)$coefficients[1])`+`r ceiling(summary(f2x)$coefficients[2])`x +`r ceiling(summary(f2x)$coefficients[3])`x^{2}$**</p>
+
+
+<p style='font-size:15px'>**Gráfica con la función obtenida del modelo polinómico de segundo grado:**</p>
+
+```{r f2xplot, echo=FALSE,fig.align='center'}
+f2xall <- predict(f2x,data=movieFrame$DIN)
+f2xallPlot <- data.frame(predicted=unname(f2xall),DIN = movieFrame$DIN)
+
+y_range <- range(f2xallPlot[,"predicted"], movieFrame[,"ASA"])
+x_range <- range(0, f2xallPlot[,"DIN"])
+
+plot(movieFrame[,"DIN"],movieFrame[,"ASA"],type="o", col="blue",ann=FALSE,axes=FALSE,ylim=y_range,xlim=x_range)
+title(main="Predicción f2(DIN)", col.main="dark green", font.main=2)
+title(xlab="DIN", col.lab=rgb(0,0.6,0))
+title(ylab="ASA", col.lab=rgb(0,0.6,0))
+axis(2, las=1, at=300*ceiling(y_range[1]):y_range[2])
+axis(1, las=1, at=3*0:x_range[2])
+box()
+
+lines(f2xallPlot$DIN,f2xallPlot$predicted, type="o", pch=2, lty=6, col="orange")
+legend(1, y_range[2], c("Nube de puntos","f2(x)"), cex=1, col=c("blue","orange"), pch=1:2, lty=c(1,6))
+```
+
+```{r deletethis2, echo=FALSE}
+rm(x_range,y_range,f2x_prediction,f2xall,f2xallPlot)
+```
+
+##### c) Ajustar un modelo de tercer grado $f3(x)$ que use polinomiso ortogonales. Evaluar $f3(25)$ ¿Qué coeficientes de $f3(x)$ son necesarios para un buen ajuste? ¿Es buen modelo? Dibujar la función obtenida junta a la nube de puntos.
+
+```{r f3x, echo=FALSE}
+f3x <- lm(movieFrame$ASA  ~ poly(DINpre,degree=3), data=movieFrame )
+f3x_prediction <- predict(f3x,data.frame(DINpre = 25))
+```
+
+<p style='font-size:15px'>**Ajuste del modelo de tercer grado ortogonal:**</p>
+###### La función "poly" utiliza polinomios ortogonales a menos que se le indique lo contrario
+
+```{r f3xsum}
+summary(f3x)
+```
+
+<p style='font-size:15px'>Este evalua a **`r round(f3x_prediction,2)`.**</p>
+<p style='font-size:15px'> Por tanto los coeficientes necesarios son **`r ceiling(summary(f3x)$coefficients[2])`** en primer grado y **`r ceiling(summary(f3x)$coefficients[3])`** en segundo y **`r ceiling(summary(f3x)$coefficients[4])`** en tercero, siendo el modelo: **$`r ceiling(summary(f3x)$coefficients[1])`+`r ceiling(summary(f3x)$coefficients[2])`x +`r ceiling(summary(f3x)$coefficients[3])`x^{2} +`r ceiling(summary(f3x)$coefficients[4])`x^{3}$**</p>
+
+
+<p style='font-size:15px'>**Gráfica con la función obtenida del modelo polinómico de tercer grado:**</p>
+
+```{r f3xplot, echo=FALSE,fig.align='center'}
+f3xall <- predict(f3x,data=movieFrame$DIN)
+f3xallPlot <- data.frame(predicted=unname(f3xall),DIN = movieFrame$DIN)
+
+y_range <- range(f3xallPlot[,"predicted"], movieFrame[,"ASA"])
+x_range <- range(0, f3xallPlot[,"DIN"])
+
+plot(movieFrame[,"DIN"],movieFrame[,"ASA"],type="o", col="blue",ann=FALSE,axes=FALSE,ylim=y_range,xlim=x_range)
+title(main="Predicción f3(DIN)", col.main="dark green", font.main=2)
+title(xlab="DIN", col.lab=rgb(0,0.6,0))
+title(ylab="ASA", col.lab=rgb(0,0.6,0))
+axis(2, las=1, at=300*ceiling(y_range[1]):y_range[2])
+axis(1, las=1, at=3*0:x_range[2])
+box()
+
+lines(f3xallPlot$DIN,f3xallPlot$predicted, type="o", pch=18, lty=2, col="green")
+legend(1, y_range[2], c("Nube de puntos","f3(x)"), cex=1, col=c("blue","green"), pch=c(1,18), lty=c(1,2))
+```
+
+
+######  (e) Enfrentar los valores ajustados a los residuos de las tres funciones. Gráficamente, ¿qué función ajusta mejor?
+
+<p style='font-size:15px'>**Valores ajustados y residuos de la función $f1(x)$:**</p>
+
+```{r f1xplotres, echo=FALSE,fig.align='center'}
+f1xall <- predict(f1x,data=movieFrame$DIN)
+f1xallPlot <- data.frame(predicted=unname(f1xall),DIN = movieFrame$DIN)
+
+y_range <- range(floor(residuals(f1x)[which.min(residuals(f1x))]), ceiling(residuals(f1x)[which.max(residuals(f1x))]))
+x_range <- range(floor(f1xallPlot[which.min(f1xallPlot[,"predicted"]),"predicted"]), ceiling(f1xallPlot[which.max(f1xallPlot[,"predicted"]),"predicted"]))
+
+
+plot(f1xallPlot[,"predicted"],residuals(f1x),type="o", col="red",ann=FALSE,axes=FALSE,ylim=y_range,xlim=x_range)
+title(main="Residuos f1(DIN)", col.main="dark green", font.main=2)
+title(xlab="Valores", col.lab=rgb(0,0.6,0))
+title(ylab="Residuos", col.lab=rgb(0,0.6,0))
+
+axis(2, las=1, at=300*y_range[1]:y_range[2])
+axis(1, las=1, at=200*x_range[1]:x_range[2])
+box()
+```
+
+<p style='font-size:15px'>**Valores ajustados y residuos de la función $f2(x)$:**</p>
+
+```{r f2xplotres, echo=FALSE,fig.align='center'}
+f2xall <- predict(f2x,data=movieFrame$DIN)
+f2xallPlot <- data.frame(predicted=unname(f2xall),DIN = movieFrame$DIN)
+
+y_range <- range(floor(residuals(f2x)[which.min(residuals(f2x))]), ceiling(residuals(f2x)[which.max(residuals(f2x))]))
+x_range <- range(floor(f2xallPlot[which.min(f2xallPlot[,"predicted"]),"predicted"]), ceiling(f2xallPlot[which.max(f2xallPlot[,"predicted"]),"predicted"]))
+
+
+plot(f2xallPlot[,"predicted"],residuals(f2x),type="o", col="orange",ann=FALSE,axes=FALSE,ylim=y_range,xlim=x_range)
+title(main="Residuos f2(DIN)", col.main="dark green", font.main=2)
+title(xlab="Valores", col.lab=rgb(0,0.6,0))
+title(ylab="Residuos", col.lab=rgb(0,0.6,0))
+
+axis(2, las=1, at=300*y_range[1]:y_range[2])
+axis(1, las=1, at=200*x_range[1]:x_range[2])
+box()
+```
+
+<p style='font-size:15px'>**Valores ajustados y residuos de la función $f3(x)$:**</p>
+
+```{r f3xplotres, echo=FALSE,fig.align='center'}
+f3xall <- predict(f3x,data=movieFrame$DIN)
+f3xallPlot <- data.frame(predicted=unname(f3xall),DIN = movieFrame$DIN)
+
+y_range <- range(floor(residuals(f3x)[which.min(residuals(f3x))]), ceiling(residuals(f3x)[which.max(residuals(f3x))]))
+x_range <- range(floor(f3xallPlot[which.min(f3xallPlot[,"predicted"]),"predicted"]), ceiling(f3xallPlot[which.max(f3xallPlot[,"predicted"]),"predicted"]))
+
+
+plot(f3xallPlot[,"predicted"],residuals(f3x),type="o", col="green",ann=FALSE,axes=FALSE,ylim=y_range,xlim=x_range)
+title(main="Residuos f3(DIN)", col.main="dark green", font.main=2)
+title(xlab="Valores", col.lab=rgb(0,0.6,0))
+title(ylab="Residuos", col.lab=rgb(0,0.6,0))
+
+axis(2, las=1, at=20*y_range[1]:y_range[2])
+axis(1, las=1, at=200*x_range[1]:x_range[2])
+box()
+```
+
+<p style='font-size:15px'>En la última gráfica podemos ver que los residuos se concentran más al comienzo, con los valores más bajos. Esto indica que $f3(x)$ es la función que mejor se ajusta. Los residuos y los valores obtenidos deben ser cuanto más similares posible.</p>
+
+
+#####  (e) Comparar los modelos para ver qué modelo es el mejor (usar comando que hemos visto de R).
+```{r anovameves}
+anova(f1x,f2x,f3x)
+```
+```{r temp, echo=FALSE}
+p1 = anova(f1x,f2x,f3x)$`Pr(>F)`[2]
+p2 = anova(f1x,f2x,f3x)$`Pr(>F)`[3]
+```
+<p style='font-size:15px'>Como podemos observar, el coeficiente P del modelo nº2 respecto al modelo nº 1 es de **`r p1`**, mientras que del modelo nº3 al modelo nº2 es de **`r p2`**. Aunque el coeficiente es mayor en el primer caso, esto ocurre dado que la comparación ocurre en orden, lo que implica que mientras que el segundo modelo es mucho mejor que el primero, el **tercero** a su vez es incluso mejor que los dos anteriores.</p>
+
+
+[^1]: Mientras que los resúmenes poseen los datos exactos, las evaluaciones han sido limitadas a dos decimales y los coeficientes han sido redondeados superiormente.
