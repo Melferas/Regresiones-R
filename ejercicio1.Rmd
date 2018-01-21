@@ -6,6 +6,8 @@ output: html_document
 ---
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(error = FALSE)
+knitr::opts_chunk$set(tidy = TRUE)
 library(xtable)
 ```
   
@@ -56,8 +58,8 @@ f1x_prediction <- predict(f1x,data.frame(DINpre = 25))
 summary(f1x)
 ```
 
-<p style='font-size:15px'>Este evalua a `r round(f1x_prediction,2)`.[^1]**</p> 
-<p style='font-size:15px'> Por tanto el coeficiente necesario es **`r ceiling(summary(f1x)$coefficients[2])`**, siendo el modelo: $`r ceiling(summary(f1x)$coefficients[1])` +`r ceiling(summary(f1x)$coefficients[2])`x$**</p>
+<p style='font-size:15px'>Este evalua a `r round(f1x_prediction,2)`.[^1]</p> 
+<p style='font-size:15px'> Por tanto el coeficiente necesario es **`r ceiling(summary(f1x)$coefficients[2])`**, siendo el modelo: $`r ceiling(summary(f1x)$coefficients[1])` +`r ceiling(summary(f1x)$coefficients[2])`x$</p>
 
 <p style='font-size:15px'>**Gráfica con la función obtenida del modelo lineal:**</p>
 
@@ -229,7 +231,7 @@ axis(1, las=1, at=200*x_range[1]:x_range[2])
 box()
 ```
 
-<p style='font-size:15px'>En la última gráfica podemos ver que los residuos se concentran más al comienzo, con los valores más bajos. Esto indica que $f3(x)$ es la función que mejor se ajusta. Los residuos y los valores obtenidos deben ser cuanto más similares posible.</p>
+<p style='font-size:15px'>En la última gráfica podemos ver que los residuos se concentran más al comienzo, con los valores más bajos. Esto indica que $f3(x)$ es la función que mejor se ajusta. Los residuos y los valores obtenidos deben ser cuanto más cercanos posible.</p>
 
 
 #####  (e) Comparar los modelos para ver qué modelo es el mejor (usar comando que hemos visto de R).
@@ -240,7 +242,7 @@ anova(f1x,f2x,f3x)
 p1 = anova(f1x,f2x,f3x)$`Pr(>F)`[2]
 p2 = anova(f1x,f2x,f3x)$`Pr(>F)`[3]
 ```
-<p style='font-size:15px'>Como podemos observar, el coeficiente P del modelo nº2 respecto al modelo nº 1 es de **`r p1`**, mientras que del modelo nº3 al modelo nº2 es de **`r p2`**. Aunque el coeficiente es mayor en el primer caso, esto ocurre dado que la comparación ocurre en orden, lo que implica que mientras que el segundo modelo es mucho mejor que el primero, el **tercero** a su vez es incluso mejor que los dos anteriores.</p>
+<p style='font-size:15px'>Como podemos observar, el coeficiente P del modelo nº 2 respecto al modelo nº 1 es de **`r p1`**, mientras que del modelo nº 3 al modelo nº 2 es de **`r p2`**.</p> <p>Aunque el coeficiente es mayor en el primer caso, la importancia de este último coeficiente es mayor. Esto es debido a que la comparación entre modelos ocurre en el orden establecido en anova, lo que implica que mientras que el segundo modelo es mucho mejor que el primero, el **tercero** a su vez es incluso mejor que los dos anteriores.</p>
 
 
 [^1]: Mientras que los resúmenes poseen los datos exactos, las evaluaciones han sido limitadas a dos decimales y los coeficientes han sido redondeados superiormente.

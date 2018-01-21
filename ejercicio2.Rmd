@@ -1,0 +1,233 @@
+---
+title: "Ejercicio Regresión 2"
+author: "Julio Sorroche García"
+date: "12 de enero de 2018"
+output: html_document
+---
+
+
+## Modelos
+
+<p style='font-size:15px'> En este ejercicio vamos a comparar distintos modelos realizados a partir del conjunto de datos *ToyotaCorolla*.</p>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(error = FALSE)
+knitr::opts_chunk$set(tidy = TRUE)
+require(readr)
+library(readr)
+Toyodata <- read_csv("./ToyotaCorolla.csv")
+attach(Toyodata)
+library(xtable)
+
+nubePuntos <- data.frame(Price=Toyodata$Price,Edad=Toyodata$Age)
+
+```
+```{r precios, fig.align='center'}
+hist(Toyodata$Price, main = "Histograma del precio",xlab="",ylab="",col="light yellow")
+title(xlab="Precio", col.lab=rgb(0.2,0.5,0.5))
+title(ylab="Frecuencia", col.lab=rgb(0.7,0,0.3))
+box()
+```
+<p style='font-size:15px'> En este caso vamos a fijarnos en el precio, el cual oscila en un rango de **4350-32500**$, nuestro objetivo tratará en averiguar de qué depende este, o al menos si alguno de los atributos de los coches disponibles tiene algo en relación.</p>
+
+<p style='font-size:15px'> Para obtener unos modelos interesantes, primero se escogerán los coeficientes más estadísticamente relevantes. En este caso se ha decidido comparar el **precio** de los Toyota con el resto de sus características, en un intento de averiguar con qué está relacionado el precio.</p>
+
+```{r findout}
+beforeModel <- lm(formula = Price  ~ ., data=Toyodata)
+```
+
+```{r firstsum}
+summary(beforeModel)
+```
+
+<p style='font-size:15px'> Tanto el **peso** (*weight*) como la **edad** (*age*) son las más dependientes respecto al **precio** (*price*), esto es sabido por su elevado valor del **t-value** tanto en el primer *(-46.889)* como en el segundo caso *(16.629)*, independientemente del signo. Estos coeficientes serán los que utilizaremos en los modelos para evaluar cual es el más preciso .<p>
+
+
+### Modelo 1
+
+<p style='font-size:15px'> Comenzamos con el primer Modelo que se trata simplemente de una regresión lineal de la **edad** sobre el **precio**.<p>
+```{r modelo1}
+
+mod1 <- lm(Price  ~ Age, data=Toyodata )
+summary(mod1)
+```
+
+<p style='font-size:15px'> El coeficiente principal es **`r ceiling(summary(mod1)$coefficients[2])`** en primer grado, por tanto la fórmula del modelo es: **$`r ceiling(summary(mod1)$coefficients[1])`+`r ceiling(summary(mod1)$coefficients[2])`x$**</p>
+
+
+<p style='font-size:15px'> Como modelo se podría decir que es decentemente preciso, dado que su $R^{2}$ es del **`r round(summary(mod1)$r.squared*100,2)`**%, sin embargo su p-value es bastante pequeño lo cual indica una buena aproximación.</p>
+
+```{r modelo1plot,fig.align='center'}
+y_range <- range(floor(Toyodata[which.min(Toyodata$Price),"Price"]), ceiling(Toyodata[which.max(Toyodata$Price),"Price"]))
+x_range <- range(floor(Toyodata[which.min(Toyodata$Age),"Age"]), ceiling(Toyodata[which.max(Toyodata$Age),"Age"]))
+
+plot(nubePuntos$Edad,nubePuntos$Price,col="black",ann=FALSE,axes=FALSE,ylim=y_range,xlim=x_range)
+title(main="Modelo 1", col.main="dark green", font.main=2)
+title(xlab="Edad", col.lab=rgb(0,0.6,0))
+title(ylab="Precio", col.lab=rgb(0,0.6,0))
+axis(2, las=1, at=3000*0:y_range[2])
+axis(1, las=1, at=3*0:x_range[2])
+box()
+
+lines(nubePuntos$Edad,fitted(mod1), type="o", pch=18, lty=1, col="green")
+legend(x_range[2]/1.5, y_range[2], c("Nube de puntos","Modelo 1"), cex=1, col=c("black","green"), pch=c(1,18), lty=c(0,1))
+```
+
+```{r modelo1plotres,fig.align='center'}
+plot(mod1, which=1)
+```
+
+
+### Modelo 2
+
+<p style='font-size:15px'> Para apreciar las diferencias entre ambos coeficientes, se ha decidido utilizar el **peso^2^** con polinomios ortogonales para el segundo modelo sobre el **precio**.<p>
+```{r modelo2}
+mod2 <- lm(Price  ~ poly(Weight,2), data=Toyodata )
+summary(mod2)
+```
+
+<p style='font-size:15px'> El coeficiente principal es **`r ceiling(summary(mod2)$coefficients[3])`** en segundo grado, por tanto la fórmula del modelo es: **$`r ceiling(summary(mod2)$coefficients[1])`+`r ceiling(summary(mod2)$coefficients[2])`x+`r ceiling(summary(mod2)$coefficients[3])`x^{2}$**</p>
+
+
+<p style='font-size:15px'> Como modelo es muy impreciso, con su $R^{2}$ del **`r round(summary(mod2)$r.squared*100,2)`**%, sin embargo su p-value es idéntico al anterior. Aún así debido a su precisión no es el modelo adecuado a escoger.</p>
+
+
+```{r modelo2plot,fig.align='center'}
+y_range <- range(floor(Toyodata[which.min(Toyodata$Price),"Price"]), ceiling(Toyodata[which.max(Toyodata$Price),"Price"]))
+x_range <- range(floor(Toyodata[which.min(Toyodata$Age),"Age"]), ceiling(Toyodata[which.max(Toyodata$Age),"Age"]))
+
+plot(nubePuntos$Edad,nubePuntos$Price,col="black",ann=FALSE,axes=FALSE,ylim=y_range,xlim=x_range)
+title(main="Modelo 2", col.main="dark green", font.main=2)
+title(xlab="Peso al cuadrado", col.lab=rgb(0,0.6,0))
+title(ylab="Precio", col.lab=rgb(0,0.6,0))
+axis(2, las=3, at=3000*0:y_range[2])
+axis(1, las=1, at=3*0:x_range[2])
+box()
+
+lines(nubePuntos$Edad,fitted(mod2), type="o", pch=18, lty=0, col="red")
+legend(x_range[2]/1.5, y_range[2], c("Nube de puntos","Modelo 2"), cex=1, col=c("black","red"), pch=c(1,18), lty=c(0,0))
+```
+
+```{r modelo2plotres,fig.align='center'}
+plot(mod2, which=2)
+```
+
+
+### Modelo 3
+
+<p style='font-size:15px'> Tras entender la poca utilidad del coeficiente **peso** en solitario, se usará de nuevo la **edad**, esta vez al *cubo*. A ella se le unirá el **peso** como apoyo.<p>
+```{r modelo3}
+mod3 <- lm(Price  ~ poly(Age,3) + Weight, data=Toyodata )
+summary(mod3)
+```
+
+<p style='font-size:15px'> El coeficiente principal es **`r ceiling(summary(mod3)$coefficients[4])`** en tercer grado, por tanto la fórmula del modelo es: **$`r ceiling(summary(mod3)$coefficients[5])`+`r ceiling(summary(mod3)$coefficients[1])`+`r ceiling(summary(mod3)$coefficients[2])`x+`r ceiling(summary(mod3)$coefficients[3])`x^{2}+`r ceiling(summary(mod3)$coefficients[4])`x^{3}$**</p>
+
+
+<p style='font-size:15px'> Como modelo supera en precisión a los dos anteriores, siendo su $R^{2}$ del **`r round(summary(mod3)$r.squared*100,2)`**%, el p-value no sufre cambios, es por ahora el modelo más idóneo.</p>
+
+```{r modelo3plot,fig.align='center'}
+y_range <- range(floor(Toyodata[which.min(Toyodata$Price),"Price"]), ceiling(Toyodata[which.max(Toyodata$Price),"Price"]))
+x_range <- range(floor(Toyodata[which.min(Toyodata$Age),"Age"]), ceiling(Toyodata[which.max(Toyodata$Age),"Age"]))
+
+plot(nubePuntos$Edad,nubePuntos$Price,col="black",ann=FALSE,axes=FALSE,ylim=y_range,xlim=x_range)
+title(main="Modelo 3", col.main="dark green", font.main=2)
+title(xlab="Edad al cubo y peso", col.lab=rgb(0,0.6,0))
+title(ylab="Precio", col.lab=rgb(0,0.6,0))
+axis(2, las=3, at=3000*0:y_range[2])
+axis(1, las=1, at=3*0:x_range[2])
+box()
+
+lines(nubePuntos$Edad,fitted(mod3), type="o", pch=18, lty=0, col="orange")
+legend(x_range[2]/1.5, y_range[2], c("Nube de puntos","Modelo 3"), cex=1, col=c("black","orange"), pch=c(1,18), lty=c(0,0))
+```
+
+```{r modelo3plotres,fig.align='center'}
+plot(mod3, which=3)
+```
+
+
+### Modelo 4
+
+<p style='font-size:15px'> De nuevo por ofrecer una diferencia, se expondrá la **edad^3^** respecto al precio. Esta vez los polinomios no tendrán por qué ser ortogonales. </p>
+```{r modelo4}
+mod4 <- lm(Price  ~ poly(Age,3,raw=TRUE), data=Toyodata )
+summary(mod4)
+```
+
+<p style='font-size:15px'> El coeficiente principal es **`r summary(mod4)$coefficients[4]`** en tercer grado, por tanto la fórmula del modelo es: **$`r ceiling(summary(mod4)$coefficients[1])`+`r ceiling(summary(mod4)$coefficients[2])`x+`r ceiling(summary(mod4)$coefficients[3])`x^{2}+`r summary(mod4)$coefficients[4]`x^{3}$**</p>
+
+
+<p style='font-size:15px'> Su precisión es normal respecto a la anterior, aunque no superior con un **`r round(summary(mod4)$r.squared*100,2)`**%. Es evidente que el p-value no va a cambiar y es necesario por tanto buscar el modelo más preciso.</p>
+
+```{r modelo4plot,fig.align='center'}
+y_range <- range(floor(Toyodata[which.min(Toyodata$Price),"Price"]), ceiling(Toyodata[which.max(Toyodata$Price),"Price"]))
+x_range <- range(floor(Toyodata[which.min(Toyodata$Age),"Age"]), ceiling(Toyodata[which.max(Toyodata$Age),"Age"]))
+
+plot(nubePuntos$Edad,nubePuntos$Price,col="black",ann=FALSE,axes=FALSE,ylim=y_range,xlim=x_range)
+title(main="Modelo 4", col.main="dark green", font.main=2)
+title(xlab="Edad al cubo, no ortogonal", col.lab=rgb(0,0.6,0))
+title(ylab="Precio", col.lab=rgb(0,0.6,0))
+axis(2, las=3, at=3000*0:y_range[2])
+axis(1, las=1, at=3*0:x_range[2])
+box()
+
+lines(nubePuntos$Edad,fitted(mod4), type="o", pch=18, lty=3, col="light blue")
+legend(x_range[2]/1.5, y_range[2], c("Nube de puntos","Modelo 4"), cex=1, col=c("black","light blue"), pch=c(1,18), lty=c(0,3))
+```
+
+```{r modelo4plotres,fig.align='center'}
+plot(mod4, which=5)
+```
+
+
+### Modelo 5
+
+<p style='font-size:15px'> Después de estos intentos, parece que no es posible mejorar el modelo aumentando el exponente del polinomio, por eso se añade el tercer coeficiente más relevante a la fórmula, los *KM*. Junto con el **peso** y la **edad^2^** se busca alcanzar el modelo más preciso.</p>
+
+```{r modelo5}
+mod5 <- lm(Price  ~ poly(Age,2) + Weight + KM, data=Toyodata )
+summary(mod5)
+```
+
+<p style='font-size:15px'> El coeficiente principal es **`r ceiling(summary(mod5)$coefficients[3])`** en segundo grado, por tanto la fórmula del modelo es: **$`r ceiling(summary(mod5)$coefficients[1])`+`r ceiling(summary(mod5)$coefficients[4])`+`r ceiling(summary(mod5)$coefficients[5])`+`r ceiling(summary(mod5)$coefficients[2])`x+`r ceiling(summary(mod5)$coefficients[3])`x^{2}$**</p>
+
+
+<p style='font-size:15px'> Su precisión es la mayor conseguida hasta ahora, con un acierto del **`r round(summary(mod5)$r.squared*100,2)`**%. Esto es debido al nuevo coeficiente agregado y la utilización prudente de polinomios ortogonales.</p>
+
+```{r modelo5plot,fig.align='center'}
+y_range <- range(floor(Toyodata[which.min(Toyodata$Price),"Price"]), ceiling(Toyodata[which.max(Toyodata$Price),"Price"]))
+x_range <- range(floor(Toyodata[which.min(Toyodata$Age),"Age"]), ceiling(Toyodata[which.max(Toyodata$Age),"Age"]))
+
+plot(nubePuntos$Edad,nubePuntos$Price,col="black",ann=FALSE,axes=FALSE,ylim=y_range,xlim=x_range)
+title(main="Modelo 5", col.main="dark green", font.main=2)
+title(xlab="Edad al cuadrado, peso y kilómetros", col.lab=rgb(0,0.6,0))
+title(ylab="Precio", col.lab=rgb(0,0.6,0))
+axis(2, las=3, at=3000*0:y_range[2])
+axis(1, las=1, at=3*0:x_range[2])
+box()
+
+lines(nubePuntos$Edad,fitted(mod5), type="o", pch=18, lty=0, col="yellow")
+legend(x_range[2]/1.5, y_range[2], c("Nube de puntos","Modelo 5"), cex=1, col=c("black","yellow"), pch=c(1,18), lty=c(0,0))
+```
+
+```{r modelo5plotres,fig.align='center'}
+plot(mod5, which=c(3,6))
+```
+
+### Comparación de modelos mediante ANOVA
+
+```{r anovameves,echo=TRUE}
+anova(mod1,mod2,mod3,mod4,mod5)
+```
+
+```{r temp, echo=FALSE}
+p1 = anova(mod1,mod2,mod3,mod4,mod5)$`Pr(>F)`[2]
+p2 = anova(mod1,mod2,mod3,mod4,mod5)$`Pr(>F)`[3]
+p3 = anova(mod1,mod2,mod3,mod4,mod5)$`Pr(>F)`[4]
+p4 = anova(mod1,mod2,mod3,mod4,mod5)$`Pr(>F)`[5]
+p44 = anova(mod1,mod2,mod3,mod4,mod5)$`RSS`[5]
+```
+
+<p style='font-size:15px'> A pesar de sus diferencias, los dos primeros modelos no son buenas aproximaciones de la nube de puntos original. A partir del tercero se nota cierta mejoría pero no es si no el **quinto** modelo el mejor adaptado, lo cual es posible justificar gracias a su valor RSS = **`r p44`** y el valor de *Pr(>F)* que indica que es mejor que el modelo inmediatamente anterior, que a su  vez es mejor que el anterior, etc...</p>
